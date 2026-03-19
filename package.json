@@ -1,0 +1,19 @@
+{
+  "name": "portfolio",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/bun": "latest",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
