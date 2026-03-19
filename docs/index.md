@@ -13,11 +13,17 @@ related: []
 
 Personal portfolio site.
 
+## Links
+
+- **Repo:** https://github.com/JohnHuffman824/john_huffman_portfolio
+- **Hosting:** Vercel (static, auto-deploys on push to main)
+
 ## Stack
 
 - Vite (static multi-page)
 - TypeScript (strict)
-- Tailwind CSS 4
+- Tailwind CSS 4 (`@tailwindcss/vite`)
+- Bun (package manager)
 - Vercel (static hosting)
 
 ## Pages

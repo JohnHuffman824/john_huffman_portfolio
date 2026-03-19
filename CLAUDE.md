@@ -2,6 +2,10 @@
 
 Personal portfolio website. Vanilla TypeScript multi-page static site.
 
+- **Repo:** `JohnHuffman824/john_huffman_portfolio`
+- **Hosting:** Vercel (auto-deploys on push to main)
+- **Vault docs:** `~/vault/projects/portfolio/` (symlink to `docs/`)
+
 ## Stack
 
 - **Build:** Vite (multi-page, static output)
