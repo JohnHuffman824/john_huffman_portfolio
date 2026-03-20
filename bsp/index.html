@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BSP Demo - Jack Huffman</title>
+    <meta name="description" content="Interactive Binary Space Partitioning visualization on the Doom logo." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BSP Demo - Jack Huffman" />
+    <meta property="og:description" content="Interactive Binary Space Partitioning visualization on the Doom logo." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="/bsp/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BSP Demo - Jack Huffman" />
+    <meta name="twitter:description" content="Interactive Binary Space Partitioning visualization on the Doom logo." />
+    <meta name="twitter:image" content="/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      document.documentElement.classList.toggle('dark',
+        localStorage.theme === 'dark' ||
+        (!('theme' in localStorage) && matchMedia('(prefers-color-scheme:dark)').matches));
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <div id="header"></div>
+    <main class="mx-auto w-full max-w-3xl flex-1 px-6 py-16">
+      <h1 class="text-4xl font-bold tracking-tight">Binary Space Partitioning</h1>
+      <p class="mt-1 text-lg" style="color: var(--accent);">Interactive Algorithm Visualization</p>
+      <div class="mt-6 space-y-4 leading-relaxed" style="color: var(--muted-foreground);">
+        <p>
+          BSP trees determine rendering order of polygons without a depth buffer.
+          Made famous by Doom (1993), the algorithm recursively partitions space
+          with dividing lines, then traverses the tree back-to-front for correct
+          painter's algorithm rendering. Watch it step-by-step on the Doom logo below.
+        </p>
+      </div>
+
+      <section data-reveal class="mt-10">
+        <div id="bsp-canvas" class="rounded-xl overflow-hidden" style="border: 1px solid var(--card-border);"></div>
+        <div id="bsp-controls" class="mt-4"></div>
+      </section>
+
+      <section data-reveal class="mt-12">
+        <h2 class="text-2xl font-semibold tracking-tight">How It Works</h2>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="rounded-xl p-4" style="background-color: var(--muted);">
+            <h3 class="text-sm font-semibold">1. Partition</h3>
+            <p class="mt-2 text-sm" style="color: var(--muted-foreground);">
+              Choose a dividing line and classify every polygon as front, back,
+              or spanning. Spanning polygons are split along the line.
+            </p>
+          </div>
+          <div class="rounded-xl p-4" style="background-color: var(--muted);">
+            <h3 class="text-sm font-semibold">2. Build Tree</h3>
+            <p class="mt-2 text-sm" style="color: var(--muted-foreground);">
+              Recurse on the front and back sets, creating a binary tree where
+              each node stores a partition line and its coplanar polygons.
+            </p>
+          </div>
+          <div class="rounded-xl p-4" style="background-color: var(--muted);">
+            <h3 class="text-sm font-semibold">3. Traverse</h3>
+            <p class="mt-2 text-sm" style="color: var(--muted-foreground);">
+              Walk the tree back-to-front from the viewer's position, drawing
+              far polygons first so near ones correctly overlap.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div data-reveal class="mt-8">
+        <a href="https://github.com/JohnHuffman824/john_huffman_portfolio/tree/main/src/bsp"
+           target="_blank" rel="noopener noreferrer"
+           class="text-sm font-medium transition-colors" style="color: var(--accent);">
+          View source on GitHub &rarr;
+        </a>
+      </div>
+    </main>
+    <div id="footer"></div>
+    <script type="module" src="/src/bsp.ts"></script>
+  </body>
+</html>

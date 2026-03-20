@@ -11,6 +11,7 @@ export default defineConfig({
         projects: resolve(import.meta.dirname, "projects/index.html"),
         about: resolve(import.meta.dirname, "about/index.html"),
         resume: resolve(import.meta.dirname, "resume/index.html"),
+        bsp: resolve(import.meta.dirname, "bsp/index.html"),
       },
     },
   },
