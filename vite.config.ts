@@ -10,6 +10,7 @@ export default defineConfig({
         main: resolve(import.meta.dirname, "index.html"),
         projects: resolve(import.meta.dirname, "projects/index.html"),
         about: resolve(import.meta.dirname, "about/index.html"),
+        resume: resolve(import.meta.dirname, "resume/index.html"),
       },
     },
   },

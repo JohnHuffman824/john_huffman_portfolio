@@ -21,6 +21,7 @@ export function renderHeader(): string {
             <li><a href="/" class="text-sm font-medium transition-colors hover:opacity-80" style="color: var(--muted-foreground); ${navLinkClass("/")}"}>Home</a></li>
             <li><a href="/projects/" class="text-sm font-medium transition-colors hover:opacity-80" style="color: var(--muted-foreground); ${navLinkClass("/projects")}">Projects</a></li>
             <li><a href="/about/" class="text-sm font-medium transition-colors hover:opacity-80" style="color: var(--muted-foreground); ${navLinkClass("/about")}">About</a></li>
+            <li><a href="/resume/" class="text-sm font-medium transition-colors hover:opacity-80" style="color: var(--muted-foreground); ${navLinkClass("/resume")}">Resume</a></li>
           </ul>
           ${renderThemeToggle()}
         </div>
