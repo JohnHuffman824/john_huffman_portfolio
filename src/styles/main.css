@@ -19,7 +19,7 @@
   @keyframes card-reveal {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(1.25rem);
     }
     to {
       opacity: 1;
@@ -30,7 +30,7 @@
   @keyframes fade-up {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translateY(1.875rem);
     }
     to {
       opacity: 1;
@@ -92,7 +92,7 @@ body {
 .card {
   background-color: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
+  border-radius: 0.75rem;
   box-shadow: var(--shadow-low);
   transition:
     transform 200ms var(--ease-spring),
@@ -102,7 +102,7 @@ body {
 }
 
 .card:hover {
-  transform: translateY(-4px) scale(1.01);
+  transform: translateY(-0.25rem) scale(1.01);
   box-shadow: var(--shadow-high);
 }
 
@@ -111,12 +111,12 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   background-color: var(--accent);
   color: #fff;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition:
     transform 150ms var(--ease-spring),
@@ -142,13 +142,13 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   background-color: transparent;
   color: var(--foreground);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition:
     transform 150ms var(--ease-spring),
@@ -174,10 +174,10 @@ body {
 /* ── Tag pill ── */
 .tag {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   background-color: var(--muted);
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   border-radius: 9999px;
 }
@@ -198,7 +198,7 @@ body {
 /* ── Scroll reveal ── */
 [data-reveal] {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(1.875rem);
   transition:
     opacity 500ms ease-out,
     transform 500ms ease-out;
