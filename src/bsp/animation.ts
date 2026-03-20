@@ -28,18 +28,27 @@ export class AnimationController {
   private loopDelay: number;
   private loopTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
+  private onReplay: (() => AnimationStep[]) | null;
+
   constructor(
     steps: AnimationStep[],
     edges: Edge[],
     onRender: RenderCallback,
     onPhaseChange: PhaseCallback,
-    options?: { loop?: boolean; loopDelay?: number },
+    options?: {
+      loop?: boolean;
+      loopDelay?: number;
+      tickInterval?: number;
+      onReplay?: () => AnimationStep[];
+    },
   ) {
     this.allEdges = edges;
     this.onRender = onRender;
     this.onPhaseChange = onPhaseChange;
     this.looping = options?.loop ?? false;
     this.loopDelay = options?.loopDelay ?? 2000;
+    this.tickInterval = options?.tickInterval ?? 800;
+    this.onReplay = options?.onReplay ?? null;
     this.state = {
       phase: "idle",
       steps,
@@ -182,6 +191,9 @@ export class AnimationController {
     this.cancelReplay();
     this.loopTimeoutId = setTimeout(() => {
       this.loopTimeoutId = null;
+      if (this.onReplay) {
+        this.state.steps = this.onReplay();
+      }
       this.reset();
       this.play();
     }, this.loopDelay);

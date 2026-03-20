@@ -45,12 +45,23 @@ export function initBSPDemo(options: BSPDemoOptions = {}): void {
   for (const e of treeEdges) edgeMap.set(e.id, e);
   const allEdges = Array.from(edgeMap.values());
 
-  // Traverse the BSP tree from a viewpoint (center of canvas)
-  const traversalSteps: TraversalStep[] = [];
-  const viewpoint = { x: cssWidth / 2, y: cssHeight / 2 };
-  if (tree) {
-    traverseBSP(tree, viewpoint, traversalSteps);
+  // Traverse the BSP tree from a viewpoint
+  function randomViewpoint(): { x: number; y: number } {
+    return {
+      x: Math.random() * cssWidth,
+      y: Math.random() * cssHeight,
+    };
   }
+
+  function retraverse(): TraversalStep[] {
+    const steps: TraversalStep[] = [];
+    if (tree) {
+      traverseBSP(tree, randomViewpoint(), steps);
+    }
+    return steps;
+  }
+
+  const traversalSteps = retraverse();
 
   // Background mode: only show traversal. Interactive: show build + traversal.
   const allSteps = backgroundMode
@@ -69,7 +80,11 @@ export function initBSPDemo(options: BSPDemoOptions = {}): void {
     (phase) => {
       updatePlayButton(phase, controller.getState().playing);
     },
-    { loop },
+    {
+      loop,
+      tickInterval: backgroundMode ? 150 : 800,
+      onReplay: backgroundMode ? retraverse : undefined,
+    },
   );
 
   if (controlsContainer) {
