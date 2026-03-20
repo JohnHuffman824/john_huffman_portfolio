@@ -55,12 +55,8 @@ export function initBSPDemo(): void {
 
   // Re-render the current frame when the theme toggles (dark/light)
   onThemeChange(() => {
-    // Force a single re-render at the current position without advancing.
-    // The render callback always reads fresh theme colors, so stepping
-    // in place is enough to pick up the new palette.
     if (!controller.getState().playing) {
-      controller.stepForward();
-      controller.stepBackward();
+      controller.rerender();
     }
   });
 

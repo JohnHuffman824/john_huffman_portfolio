@@ -101,6 +101,10 @@ export class AnimationController {
     return { ...this.state };
   }
 
+  rerender(): void {
+    this.render();
+  }
+
   destroy(): void {
     this.cancelLoop();
   }

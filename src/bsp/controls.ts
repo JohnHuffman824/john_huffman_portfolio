@@ -101,9 +101,7 @@ export function renderControls(
     controller.setSpeed(parseFloat(speedSelect.value));
   });
 
-  // Keyboard shortcuts scoped to the container's parent section
-  container.addEventListener("keydown", handleKeyboard);
-  // Also listen on document but only when the BSP section is focused/visible
+  // Keyboard shortcuts — only fire when the BSP section is focused or visible
   document.addEventListener("keydown", (e: KeyboardEvent) => {
     if (!isBspSectionFocused(container)) return;
     handleKeyboard(e);
