@@ -2,15 +2,13 @@ import type {
   AnimationState,
   AnimationStep,
   AnimationPhase,
-  Polygon,
+  Edge,
   Segment,
-  BuildStep,
-  TraversalStep,
 } from "./types";
 
 type RenderCallback = (state: {
-  polygons: Polygon[];
-  filledIds: Set<number>;
+  edges: Edge[];
+  drawnIds: Set<number>;
   partitionLines: Segment[];
   highlightedFront: Set<number>;
   highlightedBack: Set<number>;
@@ -20,22 +18,28 @@ type PhaseCallback = (phase: AnimationPhase) => void;
 
 export class AnimationController {
   private state: AnimationState;
-  private allPolygons: Polygon[];
+  private allEdges: Edge[];
   private rafId: number | null = null;
   private lastTick: number = 0;
   private tickInterval: number = 800;
   private onRender: RenderCallback;
   private onPhaseChange: PhaseCallback;
+  private looping: boolean;
+  private loopDelay: number;
+  private loopTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     steps: AnimationStep[],
-    polygons: Polygon[],
+    edges: Edge[],
     onRender: RenderCallback,
     onPhaseChange: PhaseCallback,
+    options?: { loop?: boolean; loopDelay?: number },
   ) {
-    this.allPolygons = polygons;
+    this.allEdges = edges;
     this.onRender = onRender;
     this.onPhaseChange = onPhaseChange;
+    this.looping = options?.loop ?? false;
+    this.loopDelay = options?.loopDelay ?? 2000;
     this.state = {
       phase: "idle",
       steps,
@@ -67,6 +71,7 @@ export class AnimationController {
 
   reset(): void {
     this.cancelLoop();
+    this.cancelReplay();
     this.state.playing = false;
     this.state.currentStep = 0;
     this.setPhase("idle");
@@ -107,6 +112,7 @@ export class AnimationController {
 
   destroy(): void {
     this.cancelLoop();
+    this.cancelReplay();
   }
 
   // --- Private ---
@@ -155,6 +161,7 @@ export class AnimationController {
       this.cancelLoop();
       this.setPhase("complete");
       this.render();
+      this.scheduleReplay();
       return;
     }
 
@@ -166,6 +173,24 @@ export class AnimationController {
       this.state.playing = false;
       this.cancelLoop();
       this.setPhase("complete");
+      this.scheduleReplay();
+    }
+  }
+
+  private scheduleReplay(): void {
+    if (!this.looping) return;
+    this.cancelReplay();
+    this.loopTimeoutId = setTimeout(() => {
+      this.loopTimeoutId = null;
+      this.reset();
+      this.play();
+    }, this.loopDelay);
+  }
+
+  private cancelReplay(): void {
+    if (this.loopTimeoutId !== null) {
+      clearTimeout(this.loopTimeoutId);
+      this.loopTimeoutId = null;
     }
   }
 
@@ -181,7 +206,7 @@ export class AnimationController {
     }
 
     const currentStep = this.state.steps[this.state.currentStep - 1];
-    if (currentStep.type === "partition") {
+    if (currentStep?.type === "partition") {
       this.setPhase("building");
     } else {
       this.setPhase("traversing");
@@ -196,51 +221,51 @@ export class AnimationController {
   }
 
   private computeRenderState(): {
-    filledIds: Set<number>;
+    drawnIds: Set<number>;
     partitionLines: Segment[];
     highlightedFront: Set<number>;
     highlightedBack: Set<number>;
   } {
-    const filledIds = new Set<number>();
+    const drawnIds = new Set<number>();
     const partitionLines: Segment[] = [];
     const highlightedFront = new Set<number>();
     const highlightedBack = new Set<number>();
 
     for (let i = 0; i < this.state.currentStep && i < this.state.steps.length; i++) {
-      const step = this.state.steps[i];
+      const step = this.state.steps[i]!;
 
       if (step.type === "partition") {
-        partitionLines.push(step.partition);
+        partitionLines.push(step.partitionLine);
       } else {
-        for (const id of step.polygonIds) {
-          filledIds.add(id);
+        for (const id of step.edgeIds) {
+          drawnIds.add(id);
         }
       }
     }
 
-    // Highlight only from the current step (the one just processed)
+    // Highlight only from the current step
     if (this.state.currentStep > 0 && this.state.currentStep <= this.state.steps.length) {
       const current = this.state.steps[this.state.currentStep - 1];
-      if (current.type === "partition") {
-        for (const id of current.frontPolygons) {
+      if (current?.type === "partition") {
+        for (const id of current.frontEdgeIds) {
           highlightedFront.add(id);
         }
-        for (const id of current.backPolygons) {
+        for (const id of current.backEdgeIds) {
           highlightedBack.add(id);
         }
       }
     }
 
-    return { filledIds, partitionLines, highlightedFront, highlightedBack };
+    return { drawnIds, partitionLines, highlightedFront, highlightedBack };
   }
 
   private render(): void {
-    const { filledIds, partitionLines, highlightedFront, highlightedBack } =
+    const { drawnIds, partitionLines, highlightedFront, highlightedBack } =
       this.computeRenderState();
 
     this.onRender({
-      polygons: this.allPolygons,
-      filledIds,
+      edges: this.allEdges,
+      drawnIds,
       partitionLines,
       highlightedFront,
       highlightedBack,

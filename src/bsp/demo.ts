@@ -1,47 +1,67 @@
-import { getDoomPolygons } from "./geometry";
-import { buildBSPTree } from "./tree";
+import { loadDoomEdges, transformToCanvas } from "./geometry";
+import { generateBSP, collectAllEdges } from "./tree";
 import { traverseBSP } from "./traversal";
 import { setupCanvas, getThemeColors, onThemeChange } from "./canvas";
 import { createRenderer } from "./renderer";
 import { AnimationController } from "./animation";
 import { renderControls, updatePlayButton } from "./controls";
-import type { BuildStep, TraversalStep } from "./types";
+import type { BuildStep, TraversalStep, Edge } from "./types";
 
-export function initBSPDemo(): void {
+interface BSPDemoOptions {
+  autoplay?: boolean;
+  loop?: boolean;
+  backgroundMode?: boolean;
+}
+
+export function initBSPDemo(options: BSPDemoOptions = {}): void {
+  const { autoplay = false, loop = false, backgroundMode = false } = options;
   const canvasContainer = document.getElementById("bsp-canvas");
   const controlsContainer = document.getElementById("bsp-controls");
 
-  if (!canvasContainer || !controlsContainer) {
-    console.warn("BSP demo containers not found; skipping initialization.");
+  if (!canvasContainer) {
+    console.warn("BSP demo canvas container not found; skipping initialization.");
     return;
   }
 
-  // Build the polygon set from the Doom-style letter geometry
-  const polygons = getDoomPolygons();
+  // Set up the canvas
+  const { canvas, ctx } = setupCanvas(canvasContainer, backgroundMode);
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.width / dpr;
+  const cssHeight = canvas.height / dpr;
 
-  // Construct the BSP tree, collecting partition steps for animation
+  // Load DOOM logo edges from CSV and scale to fit the canvas
+  const edges = loadDoomEdges();
+  transformToCanvas(edges, cssWidth, cssHeight);
+
+  // Build the BSP tree
+  const nextId = { value: edges.length };
   const buildSteps: BuildStep[] = [];
-  const nextId = { value: polygons.length };
-  const tree = buildBSPTree([...polygons], buildSteps, nextId);
+  const tree = generateBSP(edges, nextId, buildSteps);
 
-  // Traverse the tree from a fixed viewpoint, collecting fill steps
+  // Collect all final edges (including splits from BSP construction)
+  const treeEdges = collectAllEdges(tree);
+  const edgeMap = new Map<number, Edge>();
+  for (const e of edges) edgeMap.set(e.id, e);
+  for (const e of treeEdges) edgeMap.set(e.id, e);
+  const allEdges = Array.from(edgeMap.values());
+
+  // Traverse the BSP tree from a viewpoint (center of canvas)
   const traversalSteps: TraversalStep[] = [];
-  const viewpoint = { x: 500, y: 200 };
-
+  const viewpoint = { x: cssWidth / 2, y: cssHeight / 2 };
   if (tree) {
     traverseBSP(tree, viewpoint, traversalSteps);
   }
 
-  const allSteps = [...buildSteps, ...traversalSteps];
+  // Background mode: only show traversal. Interactive: show build + traversal.
+  const allSteps = backgroundMode
+    ? [...traversalSteps]
+    : [...buildSteps, ...traversalSteps];
 
-  // Prepare the canvas and renderer
-  const { canvas, ctx } = setupCanvas(canvasContainer);
-  const renderer = createRenderer(ctx, canvas);
+  const renderer = createRenderer(ctx, canvas, { transparent: backgroundMode });
 
-  // Wire up the animation controller with render and phase-change callbacks
   const controller = new AnimationController(
     allSteps,
-    polygons,
+    allEdges,
     (state) => {
       const colors = getThemeColors();
       renderer.drawAll({ ...state, colors });
@@ -49,17 +69,22 @@ export function initBSPDemo(): void {
     (phase) => {
       updatePlayButton(phase, controller.getState().playing);
     },
+    { loop },
   );
 
-  renderControls(controlsContainer, controller);
+  if (controlsContainer) {
+    renderControls(controlsContainer, controller);
+  }
 
-  // Re-render the current frame when the theme toggles (dark/light)
   onThemeChange(() => {
     if (!controller.getState().playing) {
       controller.rerender();
     }
   });
 
-  // Show the initial idle state
   controller.reset();
+
+  if (autoplay) {
+    controller.play();
+  }
 }

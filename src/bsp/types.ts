@@ -8,17 +8,14 @@ export interface Segment {
   end: Point;
 }
 
-export interface Polygon {
-  vertices: Point[];
-  color?: string; // filled color (set during traversal)
-  id: number; // unique identifier
+export interface Edge {
+  id: number;
+  p1: Point;
+  p2: Point;
 }
 
-export type Side = "front" | "back" | "coplanar" | "spanning";
-
 export interface BSPNode {
-  partition: Segment;
-  polygons: Polygon[];
+  edges: Edge[];
   front: BSPNode | null;
   back: BSPNode | null;
 }
@@ -27,15 +24,14 @@ export type AnimationPhase = "idle" | "building" | "traversing" | "complete";
 
 export interface BuildStep {
   type: "partition";
-  partition: Segment;
-  frontPolygons: number[]; // polygon IDs classified as front
-  backPolygons: number[]; // polygon IDs classified as back
-  splitPolygons: number[]; // polygon IDs that were split
+  partitionLine: Segment;
+  frontEdgeIds: number[];
+  backEdgeIds: number[];
 }
 
 export interface TraversalStep {
-  type: "fill";
-  polygonIds: number[]; // polygon IDs to fill in this step
+  type: "draw";
+  edgeIds: number[];
 }
 
 export type AnimationStep = BuildStep | TraversalStep;
@@ -45,5 +41,5 @@ export interface AnimationState {
   steps: AnimationStep[];
   currentStep: number;
   playing: boolean;
-  speed: number; // multiplier: 0.5, 1, 2
+  speed: number;
 }

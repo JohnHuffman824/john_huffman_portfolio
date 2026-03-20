@@ -1,50 +1,60 @@
-import type { BSPNode, Point, TraversalStep } from "./types";
-import { classifyPoint } from "./tree";
+import type { BSPNode, Point, Edge, TraversalStep } from "./types";
+
+function cross2D(a: Point, b: Point): number {
+  return a.x * b.y - a.y * b.x;
+}
 
 /**
- * Perform a back-to-front (painter's algorithm) traversal of the BSP tree.
+ * Determine which side of the node's edge the viewpoint is on.
+ * Ported from research: relative_position(scene, viewpoint)
  *
- * At each node, we classify the viewpoint against the node's partition line.
- * We visit the far side first, then emit the node's own polygons, then visit
- * the near side. This ensures polygons farther from the viewer are drawn first
- * and correctly occluded by closer polygons.
+ * Returns: 1 = front (positive cross product), -1 = back, 0 = on line
+ */
+function relativePosition(edges: Edge[], viewpoint: Point): number {
+  if (edges.length === 0) return 0;
+  const edge = edges[0]!;
+  const dir = { x: edge.p2.x - edge.p1.x, y: edge.p2.y - edge.p1.y };
+  const toView = { x: viewpoint.x - edge.p1.x, y: viewpoint.y - edge.p1.y };
+  const side = cross2D(dir, toView);
+
+  if (Math.abs(side) < 1e-6) return 0;
+  return side > 0 ? 1 : -1;
+}
+
+/**
+ * Painter's algorithm traversal of the BSP tree.
+ * Draws far side first, then current node, then near side.
+ * Ported from research: traverse(bsp_tree, viewpoint, win)
  */
 export function traverseBSP(
   node: BSPNode | null,
   viewpoint: Point,
   steps: TraversalStep[],
 ): void {
-  if (node === null) {
-    return;
-  }
+  if (!node) return;
 
-  const d = classifyPoint(viewpoint, node.partition);
+  const position = relativePosition(node.edges, viewpoint);
 
-  if (d >= 0) {
-    // Viewpoint is on the front side (or on the line).
-    // Far side = back, near side = front.
+  if (position > 0) {
+    // Viewpoint is on front side — draw far (back) first
     traverseBSP(node.back, viewpoint, steps);
-
-    if (node.polygons.length > 0) {
-      steps.push({
-        type: "fill",
-        polygonIds: node.polygons.map((p) => p.id),
-      });
+    if (node.edges.length > 0) {
+      steps.push({ type: "draw", edgeIds: node.edges.map((e) => e.id) });
     }
-
     traverseBSP(node.front, viewpoint, steps);
+  } else if (position < 0) {
+    // Viewpoint is on back side — draw far (front) first
+    traverseBSP(node.front, viewpoint, steps);
+    if (node.edges.length > 0) {
+      steps.push({ type: "draw", edgeIds: node.edges.map((e) => e.id) });
+    }
+    traverseBSP(node.back, viewpoint, steps);
   } else {
-    // Viewpoint is on the back side.
-    // Far side = front, near side = back.
+    // Viewpoint is on the line — draw both sides then current
     traverseBSP(node.front, viewpoint, steps);
-
-    if (node.polygons.length > 0) {
-      steps.push({
-        type: "fill",
-        polygonIds: node.polygons.map((p) => p.id),
-      });
-    }
-
     traverseBSP(node.back, viewpoint, steps);
+    if (node.edges.length > 0) {
+      steps.push({ type: "draw", edgeIds: node.edges.map((e) => e.id) });
+    }
   }
 }

@@ -1,102 +1,88 @@
-import type { Point, Segment, Polygon } from "./types";
+import type { Edge, Segment } from "./types";
 import type { ThemeColors } from "./canvas";
-
-const WORLD_WIDTH = 1000;
 
 export function createRenderer(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
+  options?: { transparent?: boolean },
 ) {
-  function worldToCanvas(p: Point): Point {
-    const displayWidth = parseFloat(canvas.style.width);
-    const scale = displayWidth / WORLD_WIDTH;
-    return { x: p.x * scale, y: p.y * scale };
-  }
-
-  function tracePath(vertices: Point[]) {
-    if (vertices.length === 0) return;
-    const first = worldToCanvas(vertices[0]);
-    ctx.beginPath();
-    ctx.moveTo(first.x, first.y);
-    for (let i = 1; i < vertices.length; i++) {
-      const pt = worldToCanvas(vertices[i]);
-      ctx.lineTo(pt.x, pt.y);
-    }
-    ctx.closePath();
-  }
+  const transparent = options?.transparent ?? false;
 
   function clear(colors: ThemeColors): void {
-    const displayWidth = parseFloat(canvas.style.width);
-    const displayHeight = parseFloat(canvas.style.height);
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
-    ctx.fillStyle = colors.background;
-    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    if (!transparent) {
+      const dpr = window.devicePixelRatio || 1;
+      const displayWidth = canvas.width / dpr;
+      const displayHeight = canvas.height / dpr;
+      ctx.fillStyle = colors.background;
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+    }
   }
 
-  function drawPolygonOutline(polygon: Polygon, colors: ThemeColors): void {
-    tracePath(polygon.vertices);
-    ctx.strokeStyle = colors.muted;
-    ctx.lineWidth = 1.5;
+  function drawEdgeLine(
+    edge: Edge,
+    drawn: boolean,
+    colors: ThemeColors,
+  ): void {
+    ctx.beginPath();
+    ctx.moveTo(edge.p1.x, edge.p1.y);
+    ctx.lineTo(edge.p2.x, edge.p2.y);
+
+    if (drawn) {
+      ctx.strokeStyle = colors.accent;
+      ctx.lineWidth = 2.5;
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.strokeStyle = colors.muted;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = transparent ? 0.1 : 0.25;
+    }
+
     ctx.stroke();
-  }
-
-  function drawPolygonFilled(polygon: Polygon, colors: ThemeColors): void {
-    tracePath(polygon.vertices);
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = polygon.color ?? colors.accent;
-    ctx.fill();
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = colors.muted;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
   }
 
   function drawPartitionLine(segment: Segment, colors: ThemeColors): void {
-    const start = worldToCanvas(segment.start);
-    const end = worldToCanvas(segment.end);
     ctx.save();
-    ctx.globalAlpha = 0.4;
+    ctx.globalAlpha = 0.3;
     ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 1;
     ctx.setLineDash([8, 6]);
     ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
+    ctx.moveTo(segment.start.x, segment.start.y);
+    ctx.lineTo(segment.end.x, segment.end.y);
     ctx.stroke();
     ctx.restore();
   }
 
-  function highlightPolygon(
-    polygon: Polygon,
+  function highlightEdge(
+    edge: Edge,
     side: "front" | "back",
     colors: ThemeColors,
   ): void {
-    tracePath(polygon.vertices);
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = side === "front" ? colors.accent : colors.muted;
-    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(edge.p1.x, edge.p1.y);
+    ctx.lineTo(edge.p2.x, edge.p2.y);
+    ctx.strokeStyle = side === "front" ? colors.accent : colors.muted;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.6;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
 
   function drawAll(params: {
-    polygons: Polygon[];
-    filledIds: Set<number>;
+    edges: Edge[];
+    drawnIds: Set<number>;
     partitionLines: Segment[];
     highlightedFront: Set<number>;
     highlightedBack: Set<number>;
     colors: ThemeColors;
   }): void {
-    const {
-      polygons,
-      filledIds,
-      partitionLines,
-      highlightedFront,
-      highlightedBack,
-      colors,
-    } = params;
+    const { edges, drawnIds, partitionLines, highlightedFront, highlightedBack, colors } = params;
 
     clear(colors);
 
@@ -104,29 +90,29 @@ export function createRenderer(
       drawPartitionLine(line, colors);
     }
 
-    for (const polygon of polygons) {
-      if (filledIds.has(polygon.id)) {
-        drawPolygonFilled(polygon, colors);
-      } else {
-        drawPolygonOutline(polygon, colors);
+    // Draw undrawn edges first (faint outlines)
+    for (const edge of edges) {
+      if (!drawnIds.has(edge.id)) {
+        drawEdgeLine(edge, false, colors);
       }
     }
 
-    for (const polygon of polygons) {
-      if (highlightedFront.has(polygon.id)) {
-        highlightPolygon(polygon, "front", colors);
-      } else if (highlightedBack.has(polygon.id)) {
-        highlightPolygon(polygon, "back", colors);
+    // Draw drawn edges on top (full color)
+    for (const edge of edges) {
+      if (drawnIds.has(edge.id)) {
+        drawEdgeLine(edge, true, colors);
+      }
+    }
+
+    // Highlights from build phase
+    for (const edge of edges) {
+      if (highlightedFront.has(edge.id)) {
+        highlightEdge(edge, "front", colors);
+      } else if (highlightedBack.has(edge.id)) {
+        highlightEdge(edge, "back", colors);
       }
     }
   }
 
-  return {
-    clear,
-    drawPolygonOutline,
-    drawPolygonFilled,
-    drawPartitionLine,
-    highlightPolygon,
-    drawAll,
-  };
+  return { clear, drawEdgeLine, drawPartitionLine, highlightEdge, drawAll };
 }

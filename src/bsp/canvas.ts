@@ -17,7 +17,10 @@ export function getThemeColors(): ThemeColors {
   };
 }
 
-export function setupCanvas(container: HTMLElement): {
+export function setupCanvas(
+  container: HTMLElement,
+  backgroundMode = false,
+): {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
 } {
@@ -31,11 +34,16 @@ export function setupCanvas(container: HTMLElement): {
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;
-    const displayWidth = container.clientWidth;
-    const displayHeight = displayWidth * (2 / 5); // 5:2 aspect ratio
+    const displayWidth = container.clientWidth || 400;
+    const displayHeight = backgroundMode
+      ? (container.clientHeight || 300)
+      : displayWidth * (2 / 5); // 5:2 aspect ratio
 
-    canvas.style.width = `${displayWidth}px`;
-    canvas.style.height = `${displayHeight}px`;
+    if (!backgroundMode) {
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+    }
+
     canvas.width = Math.round(displayWidth * dpr);
     canvas.height = Math.round(displayHeight * dpr);
 
